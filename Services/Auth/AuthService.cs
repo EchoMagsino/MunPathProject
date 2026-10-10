@@ -1,24 +1,28 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using MunPath.Data;
 using MunPath.DTOs.Auth;
+using MunPath.Mappers.SignUp;
 using MunPath.Models.User;
+using System.Security.Cryptography;
+using System.Text;
+using MunPath.Models.EmailVerification;
+using MimeKit;
+using MailKit.Security;
 
 namespace MunPath.Services.Auth
 {
   public class AuthService : IAuthService
   {
     private readonly ApplicationDbContext _context;
-
     private readonly PasswordHasher<UserModel> _passwordHasher;
+    private readonly IConfiguration _configuration;
 
-    public AuthService(ApplicationDbContext context, PasswordHasher<UserModel> passwordHasher)
+    public AuthService(ApplicationDbContext context, PasswordHasher<UserModel> passwordHasher, IConfiguration configuration)
         {
             _context = context;
             _passwordHasher = passwordHasher;
+            _configuration = configuration;
         }
 
 
@@ -27,9 +31,105 @@ namespace MunPath.Services.Auth
       throw new NotImplementedException();
     }
 
-    public Task<SignUpResponseDto> RegisterAsync(SignUpRequestDto request)
+    public async Task<SignUpResponseDto> RegisterAsync(SignUpRequestDto request)
     {
-      throw new NotImplementedException();
+
+      bool emailExist = await _context.Users
+        .AnyAsync(u => u.Email == request.Email);
+        
+        if(emailExist)
+      {
+        throw new InvalidOperationException("This email is already registered");
+      }
+
+      var userRole = await _context.Roles
+        .FirstOrDefaultAsync(r => r.RoleName == "Student");
+
+      if(userRole == null)
+      {
+        throw new InvalidOperationException("The default user role was not found.");
+      }
+
+      var user = SignUpMapper.ToUserModel(request);
+
+      user.PasswordHash = _passwordHasher.HashPassword(user, request.Password);
+
+      user.RoleName = userRole.RoleName;
+      user.Role = userRole;
+
+      _context.Users.Add(user);
+      await _context.SaveChangesAsync();
+
+      string otp = RandomNumberGenerator
+         .GetInt32(0, 1_000_000)
+         .ToString("D6");
+
+    string otpHash = Convert.ToHexString(
+        HMACSHA256.HashData(
+            Encoding.UTF8.GetBytes(
+                _configuration["Otp:HashKey"]!),
+            Encoding.UTF8.GetBytes(otp)));
+
+              // 4. Save the verification record HERE
+        var verification = new EmailVerificationModel
+        {
+            UserId = user.Id,
+            OtpHash = otpHash,
+            ExpiresAtUtc = DateTime.UtcNow.AddMinutes(10),
+            CreatedAtUtc = DateTime.UtcNow,
+            IsUsed = false,
+            Attempts = 0
+        };
+
+        _context.EmailVerifications.Add(verification);
+ 
+         //Email sender
+        
+        
+        var email = _configuration["EmailSettings:Email"]
+            ?? throw new InvalidOperationException(
+                "EmailSettings:Email is missing from configuration.");
+
+        var password = _configuration["EmailSettings:AppPassword"]
+            ?? throw new InvalidOperationException(
+                "EmailSettings:AppPassword is missing from configuration.");
+
+        var message = new MimeMessage();
+
+        message.From.Add(
+            new MailboxAddress("MunPath", email));
+
+        message.To.Add(
+            MailboxAddress.Parse(request.Email));
+
+        message.Subject = "Your MunPath verification code";
+
+        message.Body = new TextPart("plain")
+        {
+            Text = $"Your verification code is {otp}. " +
+                  "It expires in 10 minutes."
+        };
+
+          using var smtp = new MailKit.Net.Smtp.SmtpClient();
+
+          await smtp.ConnectAsync(
+              "smtp.gmail.com",
+              587,
+              SecureSocketOptions.StartTls);
+
+          await smtp.AuthenticateAsync(email, password);
+          await smtp.SendAsync(message);
+          await smtp.DisconnectAsync(true);
+
+           // Return the response
+          return new SignUpResponseDto
+          {
+              Message = "Registration successful. Please check your email for the verification code."
+          };
+         
+
+        
+          
     }
 
     public Task<bool> VerifyEmailAsync(VerifyEmailRequestDto request)

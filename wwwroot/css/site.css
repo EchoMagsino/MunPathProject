@@ -29,3 +29,31 @@ body {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
   text-align: start;
 }
+
+/* Leafy green buttons */
+.btn,
+.btn-primary,
+.btn-success {
+    background-color: #4CAF50;
+    border-color: #4CAF50;
+    color: white;
+}
+
+/* Hover effect */
+.btn:hover,
+.btn-primary:hover,
+.btn-success:hover {
+    background-color: #388E3C;
+    border-color: #388E3C;
+    color: white;
+}
+
+/* Click and focus effect */
+.btn:active,
+.btn-primary:active,
+.btn-success:active,
+.btn:focus-visible {
+    background-color: #2E7D32;
+    border-color: #2E7D32;
+    color: white;
+}

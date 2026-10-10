@@ -1,10 +1,15 @@
 using MunPath.Extensions;
 
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
-builder.Services.AddDatabase(builder.Configuration);
+builder.Services.ApplicationService(builder.Configuration);
+
+builder.Services.AddOptions();
+
+
 
 var app = builder.Build();
 

@@ -1,0 +1,57 @@
+
+@model MunPath.DTOs.Auth.SignUpRequestDto
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-12 col-sm-10 col-md-7 col-lg-5">
+
+            <form asp-controller="SignUp" asp-action="Index" method="post">
+                <fieldset>
+                    <legend class="text-center mb-4">Create an Account</legend>
+
+                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+                    <div>
+                        <label asp-for="FirstName" class="form-label mt-3">First Name</label>
+                        <input asp-for="FirstName" class="form-control" placeholder="Enter First Name">
+                        <span asp-validation-for="FirstName" class="text-danger"></span>
+                    </div>
+
+                    <div>
+                        <label asp-for="LastName" class="form-label mt-3">Last Name</label>
+                        <input asp-for="LastName" class="form-control" placeholder="Enter Last Name">
+                        <span asp-validation-for="LastName" class="text-danger"></span>
+                    </div>
+
+                    <div>
+                        <label asp-for="Email" class="form-label mt-3">Email Address</label>
+                        <input asp-for="Email" type="email" class="form-control" placeholder="Enter Email">
+                        <small class="form-text text-muted">We'll never share your email with anyone else.</small>
+                        <span asp-validation-for="Email" class="text-danger"></span>
+                    </div>
+
+                    <div>
+                        <label asp-for="Password" class="form-label mt-3">Password</label>
+                        <input asp-for="Password" type="password" class="form-control" placeholder="Enter Password" autocomplete="new-password">
+                        <span asp-validation-for="Password" class="text-danger"></span>
+                    </div>
+
+                    <div>
+                        <label asp-for="ConfirmPassword" class="form-label mt-3">Confirm Password</label>
+                        <input asp-for="ConfirmPassword" type="password" class="form-control" placeholder="Confirm Password" autocomplete="new-password">
+                        <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary mt-4 w-100">
+                        Create Account
+                    </button>
+                </fieldset>
+            </form>
+
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

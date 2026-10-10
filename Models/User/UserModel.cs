@@ -38,11 +38,12 @@ namespace MunPath.Models.User
         public bool EmailVerified { get; set; } = false;
 
         //foreign key of role
-        public string RoleName {get; set;} 
+        [Column("role_name")]
+        public string RoleName {get; set;} = string.Empty;
 
         [ForeignKey(nameof(RoleName))]
 
-        public RoleModel Role {get; set;} = null;
+        public RoleModel Role {get; set;} = null!;
         
 
         

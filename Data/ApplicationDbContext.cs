@@ -18,6 +18,7 @@ namespace MunPath.Data
         public DbSet<RoleModel> Roles {get; set;}
         public DbSet<UserModel> Users {get; set;}
         public DbSet<EmailVerificationModel> EmailVerifications {get; set;}
+  
 
 
 

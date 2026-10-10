@@ -111,7 +111,8 @@ namespace MunPath.Migrations
 
                     b.Property<string>("RoleName")
                         .IsRequired()
-                        .HasColumnType("character varying(30)");
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("role_name");
 
                     b.HasKey("Id");
 

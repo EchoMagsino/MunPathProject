@@ -1,56 +1,68 @@
 
 @model MunPath.DTOs.Auth.SignUpRequestDto
 
-<div class="container py-4">
-    <div class="row justify-content-center">
-        <div class="col-12 col-sm-10 col-md-7 col-lg-5">
+@{
+    ViewData["Title"] = "Create your account";
+    Layout = "_Layout";
+}
 
-            <form asp-controller="SignUp" asp-action="Index" method="post">
-                <fieldset>
-                    <legend class="text-center mb-4">Create an Account</legend>
+<section class="mp-auth">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-9 col-lg-6">
+                <div class="mp-authcard">
+                    <h1>Create your account</h1>
+                    <p class="mp-muted">Create your MunPath account to get started.</p>
 
-                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                    <form asp-controller="SignUp" asp-action="Index" method="post">
+                        <div asp-validation-summary="ModelOnly" class="mp-error"></div>
 
-                    <div>
-                        <label asp-for="FirstName" class="form-label mt-3">First Name</label>
-                        <input asp-for="FirstName" class="form-control" placeholder="Enter First Name">
-                        <span asp-validation-for="FirstName" class="text-danger"></span>
-                    </div>
+                        <div class="row g-3">
+                            <div class="col-sm-6">
+                                <label asp-for="FirstName" class="form-label">First name</label>
+                                <input asp-for="FirstName" class="form-control" autocomplete="given-name" />
+                                <span asp-validation-for="FirstName" class="mp-error"></span>
+                            </div>
 
-                    <div>
-                        <label asp-for="LastName" class="form-label mt-3">Last Name</label>
-                        <input asp-for="LastName" class="form-control" placeholder="Enter Last Name">
-                        <span asp-validation-for="LastName" class="text-danger"></span>
-                    </div>
+                            <div class="col-sm-6">
+                                <label asp-for="LastName" class="form-label">Last name</label>
+                                <input asp-for="LastName" class="form-control" autocomplete="family-name" />
+                                <span asp-validation-for="LastName" class="mp-error"></span>
+                            </div>
 
-                    <div>
-                        <label asp-for="Email" class="form-label mt-3">Email Address</label>
-                        <input asp-for="Email" type="email" class="form-control" placeholder="Enter Email">
-                        <small class="form-text text-muted">We'll never share your email with anyone else.</small>
-                        <span asp-validation-for="Email" class="text-danger"></span>
-                    </div>
+                            <div class="col-12">
+                                <label asp-for="Email" class="form-label">Email address</label>
+                                <input asp-for="Email" type="email" class="form-control" autocomplete="email" placeholder="name@example.com" />
+                                <span asp-validation-for="Email" class="mp-error"></span>
+                            </div>
 
-                    <div>
-                        <label asp-for="Password" class="form-label mt-3">Password</label>
-                        <input asp-for="Password" type="password" class="form-control" placeholder="Enter Password" autocomplete="new-password">
-                        <span asp-validation-for="Password" class="text-danger"></span>
-                    </div>
+                            <div class="col-sm-6">
+                                <label asp-for="Password" class="form-label">Password</label>
+                                <input asp-for="Password" type="password" class="form-control" autocomplete="new-password" aria-describedby="pwHelp" />
+                                <div id="pwHelp" class="form-text">At least 8 characters.</div>
+                                <span asp-validation-for="Password" class="mp-error"></span>
+                            </div>
 
-                    <div>
-                        <label asp-for="ConfirmPassword" class="form-label mt-3">Confirm Password</label>
-                        <input asp-for="ConfirmPassword" type="password" class="form-control" placeholder="Confirm Password" autocomplete="new-password">
-                        <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
-                    </div>
+                            <div class="col-sm-6">
+                                <label asp-for="ConfirmPassword" class="form-label">Confirm password</label>
+                                <input asp-for="ConfirmPassword" type="password" class="form-control" autocomplete="new-password" />
+                                <span asp-validation-for="ConfirmPassword" class="mp-error"></span>
+                            </div>
+                        </div>
 
-                    <button type="submit" class="btn btn-primary mt-4 w-100">
-                        Create Account
-                    </button>
-                </fieldset>
-            </form>
+                        <button type="submit" class="btn btn-primary w-100 btn-lg mt-4">
+                            Create account
+                        </button>
+                    </form>
 
+                    <p class="text-center mb-0 mt-3">
+                        Already have an account? <a asp-action="Login">Log in</a>
+                    </p>
+                </div>
+            </div>
         </div>
     </div>
-</div>
+</section>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />

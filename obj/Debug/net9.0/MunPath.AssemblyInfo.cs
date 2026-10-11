@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("MunPath")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+7b8bfd3d73879cf1ed611df2147df6f5606c808c")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+534f9b59689b2af20c7492d11e2a08ab033d6569")]
 [assembly: System.Reflection.AssemblyProductAttribute("MunPath")]
 [assembly: System.Reflection.AssemblyTitleAttribute("MunPath")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

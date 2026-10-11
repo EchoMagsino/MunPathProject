@@ -19,11 +19,11 @@ namespace MunPath.Services.Auth
     private readonly IConfiguration _configuration;
 
     public AuthService(ApplicationDbContext context, PasswordHasher<UserModel> passwordHasher, IConfiguration configuration)
-        {
-            _context = context;
-            _passwordHasher = passwordHasher;
-            _configuration = configuration;
-        }
+    {
+      _context = context;
+      _passwordHasher = passwordHasher;
+      _configuration = configuration;
+    }
 
 
     public Task<bool> LoginAsync(LoginRequestDto requestDto)
@@ -36,8 +36,8 @@ namespace MunPath.Services.Auth
 
       bool emailExist = await _context.Users
         .AnyAsync(u => u.Email == request.Email);
-        
-        if(emailExist)
+
+      if (emailExist)
       {
         throw new InvalidOperationException("This email is already registered");
       }
@@ -45,7 +45,7 @@ namespace MunPath.Services.Auth
       var userRole = await _context.Roles
         .FirstOrDefaultAsync(r => r.RoleName == "Student");
 
-      if(userRole == null)
+      if (userRole == null)
       {
         throw new InvalidOperationException("The default user role was not found.");
       }
@@ -64,72 +64,76 @@ namespace MunPath.Services.Auth
          .GetInt32(0, 1_000_000)
          .ToString("D6");
 
-    string otpHash = Convert.ToHexString(
-        HMACSHA256.HashData(
-            Encoding.UTF8.GetBytes(
-                _configuration["Otp:HashKey"]!),
-            Encoding.UTF8.GetBytes(otp)));
+      var secretKey = _configuration["Otp:HashKey"]
+    ?? throw new InvalidOperationException(
+        "Otp:HashKey is missing from configuration.");
 
-              // 4. Save the verification record HERE
-        var verification = new EmailVerificationModel
-        {
-            UserId = user.Id,
-            OtpHash = otpHash,
-            ExpiresAtUtc = DateTime.UtcNow.AddMinutes(10),
-            CreatedAtUtc = DateTime.UtcNow,
-            IsUsed = false,
-            Attempts = 0
-        };
+      string otpHash = Convert.ToHexString(
+          HMACSHA256.HashData(
+              Encoding.UTF8.GetBytes(secretKey),
+              Encoding.UTF8.GetBytes(otp)));
 
-        _context.EmailVerifications.Add(verification);
- 
-         //Email sender
-        
-        
-        var email = _configuration["EmailSettings:Email"]
-            ?? throw new InvalidOperationException(
-                "EmailSettings:Email is missing from configuration.");
 
-        var password = _configuration["EmailSettings:AppPassword"]
-            ?? throw new InvalidOperationException(
-                "EmailSettings:AppPassword is missing from configuration.");
+      // 4. Save the verification record HERE
+      var verification = new EmailVerificationModel
+      {
+        UserId = user.Id,
+        OtpHash = otpHash,
+        ExpiresAtUtc = DateTime.UtcNow.AddMinutes(10),
+        CreatedAtUtc = DateTime.UtcNow,
+        IsUsed = false,
+        Attempts = 0
+      };
 
-        var message = new MimeMessage();
+      _context.EmailVerifications.Add(verification);
 
-        message.From.Add(
-            new MailboxAddress("MunPath", email));
+      //Email sender
 
-        message.To.Add(
-            MailboxAddress.Parse(request.Email));
 
-        message.Subject = "Your MunPath verification code";
+      var email = _configuration["EmailSettings:Email"]
+          ?? throw new InvalidOperationException(
+              "EmailSettings:Email is missing from configuration.");
 
-        message.Body = new TextPart("plain")
-        {
-            Text = $"Your verification code is {otp}. " +
-                  "It expires in 10 minutes."
-        };
+      var password = _configuration["EmailSettings:AppPassword"]
+          ?? throw new InvalidOperationException(
+              "EmailSettings:AppPassword is missing from configuration.");
 
-          using var smtp = new MailKit.Net.Smtp.SmtpClient();
+      var message = new MimeMessage();
 
-          await smtp.ConnectAsync(
-              "smtp.gmail.com",
-              587,
-              SecureSocketOptions.StartTls);
+      message.From.Add(
+          new MailboxAddress("MunPath", email));
 
-          await smtp.AuthenticateAsync(email, password);
-          await smtp.SendAsync(message);
-          await smtp.DisconnectAsync(true);
+      message.To.Add(
+          MailboxAddress.Parse(request.Email));
 
-           // Return the response
-          return new SignUpResponseDto
-          {
-              Message = "Registration successful. Please check your email for the verification code."
-          };
-         
+      message.Subject = "Your MunPath verification code";
 
-        
-          
+      message.Body = new TextPart("plain")
+      {
+        Text = $"Your verification code is {otp}. " +
+                "It expires in 10 minutes."
+      };
+
+      using var smtp = new MailKit.Net.Smtp.SmtpClient();
+
+      await smtp.ConnectAsync(
+          "smtp.gmail.com",
+          587,
+          SecureSocketOptions.StartTls);
+
+      await smtp.AuthenticateAsync(email, password);
+      await smtp.SendAsync(message);
+      await smtp.DisconnectAsync(true);
+
+      // Return the response
+      return new SignUpResponseDto
+      {
+        Message = "Registration successful. Please check your email for the verification code."
+      };
+
+
+
+
     }
 
     public Task<bool> VerifyEmailAsync(VerifyEmailRequestDto request)

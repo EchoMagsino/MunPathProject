@@ -35,5 +35,8 @@ namespace MunPath.Models.EmailVerification
         [Column("is_used")]
         public bool IsUsed { get; set; } = false;
 
+        
+
+
     }
 }

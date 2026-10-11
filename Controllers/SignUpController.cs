@@ -45,7 +45,8 @@ namespace MunPath.Controllers
 
                TempData["SuccessMessage"] = "Account created! Please verify your email";
 
-               return RedirectToAction(nameof(Index));
+               return View("~/Views/VerifyEmail/Index.cshtml");
+
             }
             catch(InvalidOperationException ex)
             {
@@ -53,7 +54,13 @@ namespace MunPath.Controllers
                 return View(signup);
 
             }
+            
         }
+
+   
+       
+
+
 
         
     }

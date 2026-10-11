@@ -10,6 +10,7 @@ using MunPath.Models.EmailVerification;
 using MimeKit;
 using MailKit.Security;
 
+
 namespace MunPath.Services.Auth
 {
   public class AuthService : IAuthService
@@ -86,6 +87,7 @@ namespace MunPath.Services.Auth
       };
 
       _context.EmailVerifications.Add(verification);
+      await _context.SaveChangesAsync();
 
       //Email sender
 
@@ -131,14 +133,100 @@ namespace MunPath.Services.Auth
         Message = "Registration successful. Please check your email for the verification code."
       };
 
-
-
-
     }
 
-    public Task<bool> VerifyEmailAsync(VerifyEmailRequestDto request)
+    public async Task<bool> VerifyEmailAsync(VerifyEmailRequestDto request)
     {
-      throw new NotImplementedException();
+
+      try {
+
+       if(string.IsNullOrWhiteSpace(request.Otp) || request.Otp.Length != 6 || !request.Otp.All(char.IsDigit))
+      {
+          return false;
+      }
+
+      var user = await _context.Users
+          .FirstOrDefaultAsync(u => u.Email == request.Email);
+
+      if(user == null || user.EmailVerified)
+      {
+        return false;
+      }
+
+      //find the latest unused otp
+      var verification = await  _context.EmailVerifications
+          .Where(v => v.UserId == user.Id && !v.IsUsed)
+          .OrderByDescending(v => v.CreatedAtUtc)
+          .FirstOrDefaultAsync();
+
+    
+        if(verification == null)
+      {
+          return false;
+      }
+
+        if (verification.ExpiresAtUtc <= DateTime.UtcNow)
+      {
+          verification.IsUsed = true;
+          await _context.SaveChangesAsync();
+          return false;
+      }
+
+      if(verification.Attempts >= 5)
+      {
+        verification.IsUsed = true;
+        await _context.SaveChangesAsync();
+        return false;
+      }
+
+          // 6. Generate the submitted OTP's hash
+    var hashKey = _configuration["Otp:HashKey"]
+        ?? throw new InvalidOperationException(
+            "Otp:HashKey is missing from configuration.");
+
+    string submittedHash = Convert.ToHexString(
+        HMACSHA256.HashData(
+            Encoding.UTF8.GetBytes(hashKey),
+            Encoding.UTF8.GetBytes(request.Otp)));
+
+    // 7. Compare hashes safely
+    bool isValid = CryptographicOperations.FixedTimeEquals(
+        Convert.FromHexString(verification.OtpHash),
+        Convert.FromHexString(submittedHash));
+
+      if(!isValid)
+      {
+        verification.Attempts++;
+
+        if(verification.Attempts >= 5)
+        {
+          verification.IsUsed = true;
+        }
+
+        await _context.SaveChangesAsync();
+        return false;
+
+      }
+      
+
+      // 8. Mark the OTP as used and verify the user's email
+
+    verification.IsUsed = true;
+  
+    user.EmailVerified = true;
+  
+
+
+    await _context.SaveChangesAsync();
+    return true;
+
+      }
+      catch (Exception ex)
+      {
+          Console.WriteLine($"VerifyEmailAsync failed: {ex}");
+          throw;
+      }
+       
     }
   }
 }

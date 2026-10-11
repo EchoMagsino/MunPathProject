@@ -111,7 +111,7 @@ namespace MunPath.Services.Auth
       message.Body = new TextPart("plain")
       {
         Text = $"Your verification code is {otp}. " +
-                "It expires in 10 minutes."
+                "It expires in 10 minutes. Hurry up!"
       };
 
       using var smtp = new MailKit.Net.Smtp.SmtpClient();

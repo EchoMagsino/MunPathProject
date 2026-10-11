@@ -1,0 +1,141 @@
+
+@model MunPath.DTOs.Auth.VerifyEmailRequestDto
+
+@{
+    ViewData["Title"] = "Verify Your Email";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="mp-stripe" aria-hidden="true">
+    <span></span>
+    <span></span>
+    <span></span>
+</div>
+
+<main class="mp-auth">
+    <div class="container">
+        <div class="row justify-content-center align-items-center">
+            <div class="col-12 col-sm-10 col-md-8 col-lg-6 col-xl-5">
+
+                <div class="mp-authcard">
+
+                    <!-- MunPath Logo -->
+                    <div class="text-center mb-4">
+                        <a asp-controller="VerifyEmail"
+                           asp-action="Index"
+                           class="mp-logo text-decoration-none"
+                           aria-label="MunPath VerifyEmail">
+                            <span class="mp-logo__word">
+                                <span class="mp-logo__mun">Mun</span><span class="mp-logo__path">Path</span>
+                            </span>
+                        </a>
+                    </div>
+
+                    <!-- Verification Icon -->
+                    <div class="mp-empty mp-empty--inline">
+                        <div class="mp-empty__icon" aria-hidden="true">
+                            <i class="bi bi-envelope-check"></i>
+                        </div>
+
+                        <h1>Verify Your Email</h1>
+
+                        <p>
+                            You're almost there! Enter the six-digit verification
+                            code we sent to your email address to activate your
+                            MunPath account.
+                        </p>
+                    </div>
+
+                    <!-- Information Message -->
+                    <div class="mp-callout mb-4">
+                        <i class="bi bi-info-circle" aria-hidden="true"></i>
+                        <div>
+                            <strong>Check your inbox</strong>
+                            <div>
+                                Your verification code expires in
+                                <strong>10 minutes</strong>. Check your spam
+                                folder if you can't find the email.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Verification Form -->
+                    <form asp-controller="VerifyEmail"
+                          asp-action="Index"
+                          method="post">
+
+                        @Html.AntiForgeryToken()
+
+                        <div asp-validation-summary="ModelOnly"
+                             class="mp-error mb-3"
+                             role="alert"></div>
+
+                        <!-- Email is submitted with the OTP -->
+                        <input asp-for="Email" type="hidden" />
+
+                        <div class="mb-4">
+                            <label asp-for="Otp" class="form-label">
+                                Verification Code
+                            </label>
+
+                            <input asp-for="Otp"
+                                   class="form-control text-center fw-bold"
+                                   placeholder="000000"
+                                   maxlength="6"
+                                   minlength="6"
+                                   inputmode="numeric"
+                                   autocomplete="one-time-code"
+                                   pattern="[0-9]{6}"
+                                   aria-describedby="otp-help"
+                                   required />
+
+                            <span asp-validation-for="Otp"
+                                  class="mp-error"></span>
+
+                            <div id="otp-help" class="form-text">
+                                Enter the six-digit code from your email.
+                            </div>
+                        </div>
+
+                        <button type="submit"
+                                class="btn btn-primary btn-lg w-100">
+                            Verify Email
+                            <i class="bi bi-arrow-right ms-1"
+                               aria-hidden="true"></i>
+                        </button>
+                    </form>
+
+                    <div class="text-center mt-4">
+                        <p class="mp-muted mb-2">
+                            Didn't receive the code?
+                        </p>
+
+                        <p class="small mp-muted mb-0">
+                            Check your spam folder or return to the sign-up
+                            page to try again.
+                        </p>
+                    </div>
+
+                    <hr class="my-4" />
+
+                    <div class="text-center">
+                        <a asp-controller="Login"
+                           asp-action="Index"
+                           class="mp-back mb-0">
+                            <i class="bi bi-arrow-left" aria-hidden="true"></i>
+                            Back to Login
+                        </a>
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+ 
+</main>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

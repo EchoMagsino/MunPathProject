@@ -16,5 +16,7 @@ namespace MunPath.DTOs.Auth
         [RegularExpression(@"^\d{6}$",
             ErrorMessage = "Enter a valid six-digit OTP.")]
         public string Otp { get; set; } = string.Empty;
+
+        
     }
 }

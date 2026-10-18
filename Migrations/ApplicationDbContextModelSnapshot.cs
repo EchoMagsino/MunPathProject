@@ -17,7 +17,7 @@ namespace MunPath.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "8.0.31")
+                .HasAnnotation("ProductVersion", "8.0.32")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -31,8 +31,10 @@ namespace MunPath.Migrations
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<int>("Attempts")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
-                        .HasColumnName("attemps");
+                        .HasDefaultValue(0)
+                        .HasColumnName("attempts");
 
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone")
@@ -43,7 +45,9 @@ namespace MunPath.Migrations
                         .HasColumnName("expires_at_utc");
 
                     b.Property<bool>("IsUsed")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
+                        .HasDefaultValue(false)
                         .HasColumnName("is_used");
 
                     b.Property<string>("OtpHash")
@@ -58,7 +62,12 @@ namespace MunPath.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("email_verifications");
+                    b.HasIndex("UserId");
+
+                    b.ToTable("email_verifications", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_email_verifications_attempts", "attempts >= 0");
+                        });
                 });
 
             modelBuilder.Entity("MunPath.Models.Roles.RoleModel", b =>
@@ -124,6 +133,44 @@ namespace MunPath.Migrations
                     b.ToTable("User");
                 });
 
+            modelBuilder.Entity("MunPathProject.Models.StudentAcademicRecord", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal?>("GWA")
+                        .HasColumnType("numeric")
+                        .HasColumnName("gwa");
+
+                    b.Property<string>("Strand")
+                        .HasColumnType("text")
+                        .HasColumnName("strand");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId")
+                        .IsUnique();
+
+                    b.ToTable("student_academic_record");
+                });
+
+            modelBuilder.Entity("MunPath.Models.EmailVerification.EmailVerificationModel", b =>
+                {
+                    b.HasOne("MunPath.Models.User.UserModel", "users")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("users");
+                });
+
             modelBuilder.Entity("MunPath.Models.User.UserModel", b =>
                 {
                     b.HasOne("MunPath.Models.Roles.RoleModel", "Role")
@@ -133,6 +180,17 @@ namespace MunPath.Migrations
                         .IsRequired();
 
                     b.Navigation("Role");
+                });
+
+            modelBuilder.Entity("MunPathProject.Models.StudentAcademicRecord", b =>
+                {
+                    b.HasOne("MunPath.Models.User.UserModel", "User")
+                        .WithOne()
+                        .HasForeignKey("MunPathProject.Models.StudentAcademicRecord", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 #pragma warning restore 612, 618
         }

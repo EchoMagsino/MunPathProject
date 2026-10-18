@@ -9,6 +9,7 @@ using System.Text;
 using MunPath.Models.EmailVerification;
 using MimeKit;
 using MailKit.Security;
+using Org.BouncyCastle.Asn1.Ocsp;
 
 
 namespace MunPath.Services.Auth
@@ -27,9 +28,31 @@ namespace MunPath.Services.Auth
     }
 
 
-    public Task<bool> LoginAsync(LoginRequestDto requestDto)
+    public async Task<bool> LoginAsync(LoginRequestDto requestDto)
     {
-      throw new NotImplementedException();
+      try
+      {
+
+        if (string.IsNullOrWhiteSpace(requestDto.Email))
+        {
+           throw new InvalidOperationException("A valid email is required");
+           
+        }
+
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == requestDto.Email);
+
+        if(user == null)
+        {
+          return false;
+        }
+
+        return true;
+      }
+      catch (Exception ex)
+      {
+          Console.WriteLine($"VerifyEmailAsync failed: {ex}");
+          throw;
+      }
     }
 
     public async Task<SignUpResponseDto> RegisterAsync(SignUpRequestDto request)
@@ -38,9 +61,15 @@ namespace MunPath.Services.Auth
       bool emailExist = await _context.Users
         .AnyAsync(u => u.Email == request.Email);
 
+
       if (emailExist)
       {
         throw new InvalidOperationException("This email is already registered");
+      }
+
+      if(string.IsNullOrWhiteSpace(request.Email) || !request.Email.Contains("@"))
+      {
+        throw new InvalidOperationException("A valid email address is required");
       }
 
       var userRole = await _context.Roles

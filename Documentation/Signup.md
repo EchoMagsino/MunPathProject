@@ -1,30 +1,120 @@
-## AuthService Registration and OTP Implementation
+# MunPath Registration & Email OTP Verification Guide
 
-This section explains how `AuthService` registers a new student account and prepares an email verification code.
+This step-by-step guide details how `AuthService` registers new student accounts, securely hashes credentials and OTP codes, and sends verification emails using Gmail SMTP and MailKit.
 
-### 1. Inject Required Dependencies
+---
 
-In `AuthService.cs`, inject the database context, password hasher, and configuration:
+## 1. Prerequisites & Environment Setup
+
+Before implementing the registration logic, ensure required packages are installed and secrets are properly configured.
+
+### Step 1.1: Install Required Packages
+
+Navigate to your project directory containing `MunPath.csproj` and run:
+
+```bash
+dotnet add package MailKit
+dotnet add package MimeKit
+dotnet add package Microsoft.EntityFrameworkCore
+```
+
+### Step 1.2: Configure User Secrets
+
+Initialize User Secrets and set your SMTP and HMAC security keys:
+
+```bash
+dotnet user-secrets init
+
+# Email SMTP Credentials
+dotnet user-secrets set "EmailSettings:Email" "your-email@gmail.com"
+dotnet user-secrets set "EmailSettings:AppPassword" "your-app-password"
+
+# OTP Hashing Key (Minimum 32 random characters recommended)
+dotnet user-secrets set "Otp:HashKey" "YourSuperSecretCryptoHashKey12345!"
+```
+
+> **Security Note:** Never hardcode credentials or secrets into source code or commit them to version control.
+
+---
+
+## 2. Gmail SMTP Setup
+
+To allow MunPath to send automated emails via Gmail:
+
+1. Log in to your primary Google Account.
+2. Ensure **2-Step Verification** is enabled.
+3. Visit [Google App Passwords](https://myaccount.google.com/apppasswords).
+4. Create an App Password for **MunPath**.
+5. Copy the generated 16-character password and assign it to `EmailSettings:AppPassword` in User Secrets.
+
+### Reference SMTP Configuration
+
+| Setting | Value |
+|---|---|
+| **Host** | `smtp.gmail.com` |
+| **Port** | `587` |
+| **Encryption** | `STARTTLS` |
+| **Authentication** | Gmail Address + App Password |
+
+---
+
+## 3. Required Namespaces
+
+Ensure `AuthService.cs` imports all necessary dependencies:
 
 ```csharp
-public AuthService(
-    ApplicationDbContext context,
-    PasswordHasher<UserModel> passwordHasher,
-    IConfiguration configuration)
+using System.Security.Cryptography;
+using System.Text;
+using MailKit.Net.Smtp;
+using MailKit.Security;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using MimeKit;
+using MunPath.Data;
+using MunPath.Models;
+using MunPath.Models.DTOs;
+using MunPath.Models.EmailVerification;
+```
+
+---
+
+## 4. AuthService Registration and OTP Implementation
+
+This section details the end-to-end flow inside `RegisterAsync()`.
+
+### Step 4.1: Inject Required Dependencies
+
+Inject the database context, password hasher, and configuration instance into `AuthService`:
+
+```csharp
+public class AuthService
 {
-    _context = context;
-    _passwordHasher = passwordHasher;
-    _configuration = configuration;
+    private readonly ApplicationDbContext _context;
+    private readonly PasswordHasher<UserModel> _passwordHasher;
+    private readonly IConfiguration _configuration;
+
+    public AuthService(
+        ApplicationDbContext context,
+        PasswordHasher<UserModel> passwordHasher,
+        IConfiguration configuration)
+    {
+        _context = context;
+        _passwordHasher = passwordHasher;
+        _configuration = configuration;
+    }
 }
 ```
 
-- `ApplicationDbContext` accesses users, roles, and email verification records.
-- `PasswordHasher<UserModel>` securely hashes the user's password.
-- `IConfiguration` reads secrets from User Secrets or other configuration providers.
+- **`ApplicationDbContext`**: Handles database interactions for users, roles, and OTP records.
+- **`PasswordHasher<UserModel>`**: Provides secure PBKDF2 password hashing.
+- **`IConfiguration`**: Retrieves secrets from `appsettings.json` or User Secrets.
 
-### 2. Check for Duplicate Emails
+---
 
-Before creating an account, check whether the email is already registered:
+### Step 4.2: Verify Email Uniqueness
+
+Check if the requested email is already registered in the system:
 
 ```csharp
 bool emailExist = await _context.Users
@@ -32,16 +122,15 @@ bool emailExist = await _context.Users
 
 if (emailExist)
 {
-    throw new InvalidOperationException(
-        "This email is already registered");
+    throw new InvalidOperationException("This email is already registered.");
 }
 ```
 
-This prevents registration when a user with the same email already exists.
+---
 
-### 3. Assign the Student Role
+### Step 4.3: Retrieve Default Student Role
 
-Retrieve the default `Student` role from the database:
+Fetch the `Student` role entity to assign to the new user:
 
 ```csharp
 var userRole = await _context.Roles
@@ -49,65 +138,68 @@ var userRole = await _context.Roles
 
 if (userRole == null)
 {
-    throw new InvalidOperationException(
-        "The default user role was not found.");
+    throw new InvalidOperationException("The default user role ('Student') was not found in the database.");
 }
 ```
 
-The `Student` role must already exist in the Roles table.
+---
 
-### 4. Create the User Account
+### Step 4.4: Create and Save User Record
 
-Map the signup request to a user model, hash the password, and assign the role:
+Map the incoming request payload to a `UserModel`, hash the password, and persist the entity:
 
 ```csharp
 var user = SignUpMapper.ToUserModel(request);
 
-user.PasswordHash = _passwordHasher.HashPassword(
-    user, request.Password);
+// Hash the plain-text password securely
+user.PasswordHash = _passwordHasher.HashPassword(user, request.Password);
 
+// Assign role association
 user.RoleName = userRole.RoleName;
 user.Role = userRole;
 
 _context.Users.Add(user);
+
+// Save immediately so EF Core generates the user's primary key ID
 await _context.SaveChangesAsync();
 ```
 
-Saving the user first ensures the database generates the user's ID, which is needed for the verification record.
+---
 
-### 5. Generate and Hash the OTP
+### Step 4.5: Generate Cryptographic OTP and Hash
 
-Generate a random six-digit verification code:
-
-```csharp
-string otp = RandomNumberGenerator
-    .GetInt32(0, 1_000_000)
-    .ToString("D6");
-```
-
-Hash the OTP using HMAC-SHA256:
+Generate a cryptographically secure 6-digit string and hash it using HMAC-SHA256:
 
 ```csharp
+// 1. Generate secure random 6-digit string (e.g., "042918")
+string otp = RandomNumberGenerator.GetInt32(0, 1_000_000).ToString("D6");
+
+// 2. Fetch secret key
+string hashKey = _configuration["Otp:HashKey"] 
+    ?? throw new InvalidOperationException("Otp:HashKey is not configured.");
+
+// 3. Generate HMAC-SHA256 hash of the OTP
 string otpHash = Convert.ToHexString(
     HMACSHA256.HashData(
-        Encoding.UTF8.GetBytes(
-            _configuration["Otp:HashKey"]!),
-        Encoding.UTF8.GetBytes(otp)));
+        Encoding.UTF8.GetBytes(hashKey),
+        Encoding.UTF8.GetBytes(otp)
+    )
+);
 ```
 
-The `Otp:HashKey` secret must be configured in User Secrets. The original OTP is sent to the user; the hash is stored in the database.
+---
 
-### 6. Save the Verification Record
+### Step 4.6: Store Email Verification Record
 
-Create a record linked to the newly registered user:
+Link the generated OTP hash to the newly created user in the database:
 
 ```csharp
 var verification = new EmailVerificationModel
 {
     UserId = user.Id,
     OtpHash = otpHash,
-    ExpiresAtUtc = DateTime.UtcNow.AddMinutes(10),
     CreatedAtUtc = DateTime.UtcNow,
+    ExpiresAtUtc = DateTime.UtcNow.AddMinutes(10), // Expires in 10 minutes
     IsUsed = false,
     Attempts = 0
 };
@@ -116,206 +208,81 @@ _context.EmailVerifications.Add(verification);
 await _context.SaveChangesAsync();
 ```
 
-The record stores the OTP hash, expiration time, creation time, and usage status. The code expires after ten minutes.
+---
 
-### 7. Send the OTP Email
+### Step 4.7: Send Verification Email via MailKit
 
-After saving the verification record, send the original `otp` to the registered email address using the Gmail SMTP and MailKit implementation described in the **Email OTP Setup** section.
-
-Return a signup response only after the email-sending operation succeeds.
-
-### 8. Required Namespaces
-
-Ensure `AuthService.cs` includes the following namespaces:
+Construct and dispatch the message using MimeKit and MailKit SMTP:
 
 ```csharp
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using System.Security.Cryptography;
-using System.Text;
-using MunPath.Models.EmailVerification;
-```
+var senderEmail = _configuration["EmailSettings:Email"]
+    ?? throw new InvalidOperationException("EmailSettings:Email is missing.");
 
-Include your existing namespaces for the DTOs, user models, mapper, and database context.
-
-### Registration Flow Summary
-
-1. Validate that the email is not already registered.
-2. Retrieve the Student role.
-3. Create the user and hash their password.
-4. Save the user to the database.
-5. Generate and hash a six-digit OTP.
-6. Save the verification record with a ten-minute expiration.
-7. Send the OTP email.
-8. Return the signup response.
-
-**Security note:** Keep the OTP hash key and Gmail App Password private. Also validate the OTP's expiration, usage status, and attempt count when implementing `VerifyEmailAsync()`.
-
-
-=================================================================================================================================
-
-
-# MunPath Email OTP Setup (Gmail + MailKit)
-
-This guide explains how to send a six-digit email verification code during user registration using Gmail SMTP, MailKit, and MimeKit.
-
-## 1. Install NuGet Packages
-
-Open the terminal in the folder containing `MunPath.csproj` and run:
-
-```bash
-dotnet add package MailKit
-dotnet add package MimeKit
-```
-
-## 2. Generate a Gmail App Password
-
-1. Sign in to your Google Account.
-2. Enable **2-Step Verification**.
-3. Open [Google App Passwords](https://myaccount.google.com/apppasswords).
-4. Generate an app password for MunPath.
-5. Copy the generated password.
-
-Use the App Password instead of your normal Gmail password.
-
-## 3. Configure User Secrets
-
-Initialize User Secrets if you haven't already:
-
-```bash
-dotnet user-secrets init
-```
-
-Store your Gmail credentials:
-
-```bash
-dotnet user-secrets set "EmailSettings:Email" "your-email@gmail.com"
-dotnet user-secrets set "EmailSettings:AppPassword" "your-app-password"
-```
-
-Replace the example values with your actual credentials. Never commit these secrets to Git.
-
-## 4. Configure the Email Service
-
-In `AuthService.cs`, inject `IConfiguration` through the constructor so the service can access User Secrets:
-
-```csharp
-private readonly IConfiguration _configuration;
-
-public AuthService(
-    ApplicationDbContext context,
-    PasswordHasher<UserModel> passwordHasher,
-    IConfiguration configuration)
-{
-    _context = context;
-    _passwordHasher = passwordHasher;
-    _configuration = configuration;
-}
-```
-
-Keep any other dependencies already used by your service.
-
-Add these namespaces:
-
-```csharp
-using Microsoft.Extensions.Configuration;
-using MailKit.Security;
-using MimeKit;
-```
-
-## 5. Generate and Store the OTP
-
-Inside `RegisterAsync()`, generate a six-digit code:
-
-```csharp
-string otp = RandomNumberGenerator
-    .GetInt32(0, 1_000_000)
-    .ToString("D6");
-```
-
-Hash the OTP and save the hash, user ID, expiration time, and usage status in your `EmailVerifications` table.
-
-Set the expiration time to ten minutes:
-
-```csharp
-ExpiresAtUtc = DateTime.UtcNow.AddMinutes(10)
-```
-
-Store the hash, not the original OTP, in the database.
-
-## 6. Send the Verification Email
-
-After saving the verification record, use MailKit and MimeKit to send the original OTP:
-
-```csharp
-var email = _configuration["EmailSettings:Email"]
-    ?? throw new InvalidOperationException(
-        "EmailSettings:Email is missing from configuration.");
-
-var password = _configuration["EmailSettings:AppPassword"]
-    ?? throw new InvalidOperationException(
-        "EmailSettings:AppPassword is missing from configuration.");
+var appPassword = _configuration["EmailSettings:AppPassword"]
+    ?? throw new InvalidOperationException("EmailSettings:AppPassword is missing.");
 
 var message = new MimeMessage();
-
-message.From.Add(new MailboxAddress("MunPath", email));
+message.From.Add(new MailboxAddress("MunPath", senderEmail));
 message.To.Add(MailboxAddress.Parse(request.Email));
-message.Subject = "Your MunPath verification code";
+message.Subject = "Your MunPath Verification Code";
 
 message.Body = new TextPart("plain")
 {
-    Text = $"Your verification code is {otp}. " +
-           "It expires in 10 minutes."
+    Text = $"Your verification code is: {otp}\n\nThis code will expire in 10 minutes. If you did not request this code, please ignore this email."
 };
 
-using var smtp = new MailKit.Net.Smtp.SmtpClient();
+using var smtp = new SmtpClient();
 
-await smtp.ConnectAsync(
-    "smtp.gmail.com",
-    587,
-    SecureSocketOptions.StartTls);
+// Connect via STARTTLS on Port 587
+await smtp.ConnectAsync("smtp.gmail.com", 587, SecureSocketOptions.StartTls);
 
-await smtp.AuthenticateAsync(email, password);
+// Authenticate and send
+await smtp.AuthenticateAsync(senderEmail, appPassword);
 await smtp.SendAsync(message);
 await smtp.DisconnectAsync(true);
 ```
 
-Add this namespace for OTP generation:
+---
 
-```csharp
-using System.Security.Cryptography;
+## 5. End-to-End Registration Flow Summary
+
+```
+[ User Request ]
+       │
+       ▼
+1. Validate Unique Email
+       │
+       ▼
+2. Fetch Default "Student" Role
+       │
+       ▼
+3. Hash Password & Create User ──► [ DB: Save User (Get UserId) ]
+       │
+       ▼
+4. Generate 6-Digit OTP & HMAC-SHA256 Hash
+       │
+       ▼
+5. Save OTP Record ──────────────► [ DB: Save EmailVerificationModel ]
+       │
+       ▼
+6. Send Plaintext OTP via MailKit ──► [ User Email Inbox ]
+       │
+       ▼
+7. Return Success Response
 ```
 
-Place the email-sending code inside `RegisterAsync()`, after generating the OTP and saving its verification record. Return your `SignUpResponseDto` after sending the email successfully.
+---
 
-## 7. Test the Signup Flow
+## 6. Testing & Validation Checklist
 
-Run the application:
-
-```bash
-dotnet watch run
-```
-
-1. Open the signup page.
-2. Register using a valid email address.
-3. Check the recipient's inbox and spam folder.
-4. Confirm that the verification record exists in the database.
-5. Verify that the account remains unverified until the OTP is successfully confirmed.
-
-## 8. Important Security Notes
-
-- Never store Gmail credentials in source code.
-- Never commit User Secrets or App Passwords to Git.
-- Expire OTPs after ten minutes.
-- Limit incorrect OTP attempts.
-- Mark successful OTPs as used to prevent reuse.
-- Handle SMTP failures so users can request another verification code.
-
-**SMTP settings**
-
-| Setting | Value |
-|---|---|
-| SMTP host | `smtp.gmail.com` |
-| Port | `587` |
-| Security | STARTTLS |
-| Authentication | Gmail address + App Password |
+1. **Start Application**: Run `dotnet watch run`.
+2. **Submit Registration**: Post valid payload data via form or endpoint.
+3. **Inbox Check**: Confirm delivery in the recipient inbox and spam folder.
+4. **Database Verification**:
+   - Verify user record exists in `Users` table.
+   - Verify that `EmailVerifications` contains the corresponding `UserId`, `OtpHash`, `IsUsed = false`, and accurate `ExpiresAtUtc`.
+5. **OTP Verification Logic**: Ensure your `VerifyEmailAsync()` logic handles:
+   - Comparing HMAC-SHA256 hash of the input OTP against `OtpHash`.
+   - Rejection if `DateTime.UtcNow > ExpiresAtUtc`.
+   - Rejection if `IsUsed == true`.
+   - Incrementing `Attempts` and enforcing max-attempt locks.

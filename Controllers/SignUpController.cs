@@ -41,11 +41,11 @@ namespace MunPath.Controllers
 
             try
             {
-               var response = await _authService.RegisterAsync(signup);
+               await _authService.RegisterAsync(signup);
 
                TempData["SuccessMessage"] = "Account created! Please verify your email";
 
-               return View("~/Views/VerifyEmail/Index.cshtml");
+               return RedirectToAction("Index", "VerifyEmail", new { email = signup.Email });
 
             }
             catch(InvalidOperationException ex)

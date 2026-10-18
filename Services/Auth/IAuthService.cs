@@ -13,5 +13,7 @@ namespace MunPath.Services.Auth
         Task<bool> VerifyEmailAsync(VerifyEmailRequestDto request);
 
         Task<bool> LoginAsync(LoginRequestDto requestDto);
+
+        
     }
 }

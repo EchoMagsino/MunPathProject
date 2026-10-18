@@ -1,6 +1,180 @@
-﻿@{
+@{
     ViewData["Title"] = "Privacy Policy";
+    Layout = null;
 }
-<h1>@ViewData["Title"]</h1>
 
-<p>Use this page to detail your site's privacy policy.</p>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@ViewData["Title"] | MunPath</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700;800&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/privacy.css" asp-append-version="true" />
+</head>
+<body class="mp-privacy-page">
+    <a class="mp-skip visually-hidden-focusable" href="#main">Skip to main content</a>
+    <div class="mp-stripe" aria-hidden="true"><span></span><span></span><span></span></div>
+
+    <header class="navbar mp-navbar mp-privacy-nav">
+        <div class="container">
+            <a class="navbar-brand" asp-controller="Home" asp-action="Index" aria-label="MunPath home">
+                <span class="mp-logo">
+                    <span class="mp-privacy-brand-icon"><i class="bi bi-signpost-split-fill" aria-hidden="true"></i></span>
+                    <span class="mp-logo__word"><span class="mp-logo__mun">Mun</span><span class="mp-logo__path">Path</span></span>
+                </span>
+            </a>
+            <a class="btn btn-outline-primary" asp-controller="Home" asp-action="Index">
+                <i class="bi bi-arrow-left me-1" aria-hidden="true"></i> Back to home
+            </a>
+        </div>
+    </header>
+
+    <main id="main">
+        <section class="mp-privacy-hero">
+            <div class="container">
+                <span class="mp-chip mp-chip--sample"><i class="bi bi-shield-check" aria-hidden="true"></i> PRIVACY AT MUNPATH</span>
+                <h1>Your privacy matters.</h1>
+                <p>Learn what information MunPath uses and how we work to protect it.</p>
+                <div class="mp-privacy-updated"><i class="bi bi-calendar3" aria-hidden="true"></i> Effective October 18, 2026</div>
+            </div>
+        </section>
+
+        <section class="mp-privacy-content">
+            <div class="container">
+                <div class="mp-privacy-grid">
+                    <nav class="mp-privacy-toc" aria-label="Privacy policy sections">
+                        <h2>In this policy</h2>
+                        <a href="#information">Information we collect</a>
+                        <a href="#use">How we use information</a>
+                        <a href="#sharing">How we share information</a>
+                        <a href="#security">Data security</a>
+                        <a href="#retention">Data retention</a>
+                        <a href="#rights">Your rights</a>
+                        <a href="#updates">Policy updates</a>
+                        <a href="#contact">Contact us</a>
+                        <div class="mp-privacy-toc__note">
+                            <i class="bi bi-info-circle" aria-hidden="true"></i>
+                            <span>Questions about this policy? We’re here to help.</span>
+                        </div>
+                    </nav>
+
+                    <article class="mp-privacy-article">
+                        <p class="mp-privacy-intro">
+                            Welcome to <strong>MunPath</strong>. We are committed to protecting your personal information and your right to privacy. If you have any questions or concerns about this privacy notice or our practices with regards to your personal information, please contact us at <a href="mailto:munpathproject@gmail.com">munpathproject@gmail.com</a>.
+                        </p>
+                        <p>This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our web application. Please read this privacy policy carefully. If you do not agree with the terms of this privacy policy, please do not access the application.</p>
+
+                        <section id="information" class="mp-privacy-section">
+                            <span class="mp-privacy-section__number">01</span>
+                            <div>
+                                <h2>Information We Collect</h2>
+                                <p>We collect personal information that you voluntarily provide to us when you register on the application, express an interest in obtaining information about us or our products and services, or otherwise when you contact us.</p>
+                                <ul>
+                                    <li><strong>Personal Information Provided by You:</strong> Username, Email Address (used for account identification and OTP verification), and Password (stored securely as a cryptographic hash; we never store your plain-text password).</li>
+                                    <li><strong>Automatically Collected Information:</strong>
+                                        <ul>
+                                            <li><strong>Cookies and Session Data:</strong> When you log in, we place an encrypted authentication cookie (<code>MunPath.Auth</code>) in your browser to maintain your session securely.</li>
+                                            <li><strong>Log and Usage Data:</strong> Server logs automatically collect standard information such as your IP address, browser type, operating system, access times, and pages viewed.</li>
+                                        </ul>
+                                    </li>
+                                </ul>
+                            </div>
+                        </section>
+
+                        <section id="use" class="mp-privacy-section">
+                            <span class="mp-privacy-section__number">02</span>
+                            <div>
+                                <h2>How We Use Your Information</h2>
+                                <p>We use personal information collected via our web application for a variety of business purposes described below:</p>
+                                <ul>
+                                    <li><strong>Account Creation and Authentication:</strong> To set up your user account, verify your identity via email OTP (One-Time Password), and manage your secure login sessions using cookie authentication.</li>
+                                    <li><strong>To Send Administrative Information:</strong> We use your email address to send you verification codes, password reset instructions, and important updates about your account or service changes.</li>
+                                    <li><strong>To Protect Our Services:</strong> To monitor for fraudulent activity, enforce our terms, and protect against security risks (such as CSRF protection and secure token handling).</li>
+                                </ul>
+                            </div>
+                        </section>
+
+                        <section id="sharing" class="mp-privacy-section">
+                            <span class="mp-privacy-section__number">03</span>
+                            <div>
+                                <h2>How We Share Your Information</h2>
+                                <p>We only share information with your consent, to comply with laws, to provide you with services, to protect your rights, or to fulfill business obligations.</p>
+                                <ul>
+                                    <li><strong>Service Providers:</strong> We may share your data with third-party vendors who perform services for us, such as email delivery services (e.g., Gmail SMTP / MailKit) used to transmit your OTP verification codes.</li>
+                                    <li><strong>Legal Obligations:</strong> We may disclose your information where required to do so by law in order to comply with applicable laws, governmental requests, judicial proceedings, court orders, or legal processes.</li>
+                                </ul>
+                            </div>
+                        </section>
+
+                        <section id="security" class="mp-privacy-section">
+                            <span class="mp-privacy-section__number">04</span>
+                            <div>
+                                <h2>How We Keep Your Data Secure</h2>
+                                <p>We have implemented appropriate technical and organizational security measures designed to protect the security of any personal information we process:</p>
+                                <ul>
+                                    <li><strong>Password Hashing:</strong> Passwords are cryptographically hashed before being stored in our database.</li>
+                                    <li><strong>Encrypted Cookies:</strong> Our authentication cookies (<code>MunPath.Auth</code>) are marked as <code>HttpOnly</code> (protecting them from client-side script theft/XSS), require HTTPS (<code>Secure</code>), and include <code>SameSite</code> configurations to mitigate Cross-Site Request Forgery.</li>
+                                    <li><strong>Secure OTP Handling:</strong> Verification codes are generated using cryptographically secure random number generators and stored as secure hashes rather than plain text.</li>
+                                </ul>
+                                <p><em>Note: Despite our safeguards, no electronic transmission over the internet or information storage technology can be guaranteed to be 100% secure.</em></p>
+                            </div>
+                        </section>
+
+                        <section id="retention" class="mp-privacy-section">
+                            <span class="mp-privacy-section__number">05</span>
+                            <div>
+                                <h2>Data Retention</h2>
+                                <p>We will only keep your personal information for as long as it is necessary for the purposes set out in this privacy policy, unless a longer retention period is required or permitted by law.</p>
+                            </div>
+                        </section>
+
+                        <section id="rights" class="mp-privacy-section">
+                            <span class="mp-privacy-section__number">06</span>
+                            <div>
+                                <h2>Your Data Protection Rights</h2>
+                                <p>Depending on your jurisdiction (such as the Data Privacy Act of 2012 in the Philippines), you may have certain rights regarding your personal information, including:</p>
+                                <ul>
+                                    <li><strong>The right to access:</strong> You can request copies of your personal data.</li>
+                                    <li><strong>The right to rectification:</strong> You can request that we correct any information you believe is inaccurate.</li>
+                                    <li><strong>The right to erasure:</strong> You can request that we erase your personal data, under certain conditions.</li>
+                                    <li><strong>The right to withdraw consent:</strong> You may delete your account or opt-out of communications at any time.</li>
+                                </ul>
+                            </div>
+                        </section>
+
+                        <section id="updates" class="mp-privacy-section">
+                            <span class="mp-privacy-section__number">07</span>
+                            <div>
+                                <h2>Updates to This Policy</h2>
+                                <p>We may update this privacy policy from time to time. The updated version will be indicated by an updated "Effective Date" and the updated version will be effective as soon as it is accessible.</p>
+                            </div>
+                        </section>
+
+                        <section id="contact" class="mp-privacy-contact">
+                            <div class="mp-privacy-contact__icon"><i class="bi bi-envelope-paper" aria-hidden="true"></i></div>
+                            <div>
+                                <span>08 · CONTACT US</span>
+                                <h2>Contact Us</h2>
+                                <p>If you have questions or comments about this policy, you may email us at: <strong>Email:</strong> <a href="mailto:munpathproject@gmail.com">munpathproject@gmail.com</a></p>
+                            </div>
+                        </section>
+                    </article>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="mp-footer mp-privacy-footer">
+        <div class="container d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <span class="small">&copy; 2026 MunPath · Capstone project</span>
+            <a class="small" asp-controller="Home" asp-action="Index">Back to MunPath</a>
+        </div>
+    </footer>
+</body>
+</html>

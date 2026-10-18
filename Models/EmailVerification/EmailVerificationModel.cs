@@ -4,6 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Threading.Tasks;
+using MunPath.Models.User;
 
 
 namespace MunPath.Models.EmailVerification
@@ -35,7 +36,7 @@ namespace MunPath.Models.EmailVerification
         [Column("is_used")]
         public bool IsUsed { get; set; } = false;
 
-        
+        public UserModel? users {get; set;}
 
 
     }
